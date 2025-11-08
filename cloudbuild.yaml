@@ -1,0 +1,32 @@
+substitutions:
+  _REGION: "asia-south1"
+  _PROJECT_ID: "orgapp-demo"
+  _REPOSITORY: "orgapp-repo"
+steps:
+- name: "gcr.io/cloud-builders/docker"
+  args: ["build","-f","org-app/Dockerfile","-t","${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_REPOSITORY}/org-app:latest","."]
+- name: "gcr.io/cloud-builders/docker"
+  args: ["push","${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_REPOSITORY}/org-app:latest"]
+- name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
+  entrypoint: "bash"
+  args: ["-c","gcloud run deploy org-app --image=${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_REPOSITORY}/org-app:latest --region=${_REGION} --allow-unauthenticated --port=8081 --cpu=1 --memory=512Mi --min-instances=0 --max-instances=2"]
+
+- name: "gcr.io/cloud-builders/docker"
+  args: ["build","-f","file-upload-service/Dockerfile","-t","${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_REPOSITORY}/file-upload-service:latest","."]
+- name: "gcr.io/cloud-builders/docker"
+  args: ["push","${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_REPOSITORY}/file-upload-service:latest"]
+- name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
+  entrypoint: "bash"
+  args: ["-c","gcloud run deploy file-upload-service --image=${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_REPOSITORY}/file-upload-service:latest --region=${_REGION} --allow-unauthenticated --port=8082 --cpu=1 --memory=512Mi --min-instances=0 --max-instances=2"]
+
+- name: "gcr.io/cloud-builders/docker"
+  args: ["build","-f","orders-kafka-service/Dockerfile","-t","${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_REPOSITORY}/orders-kafka-service:latest","."]
+- name: "gcr.io/cloud-builders/docker"
+  args: ["push","${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_REPOSITORY}/orders-kafka-service:latest"]
+- name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
+  entrypoint: "bash"
+  args: ["-c","gcloud run deploy orders-kafka-service --image=${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_REPOSITORY}/orders-kafka-service:latest --region=${_REGION} --allow-unauthenticated --port=8083 --cpu=1 --memory=512Mi --min-instances=0 --max-instances=2"]
+images:
+- "${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_REPOSITORY}/org-app:latest"
+- "${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_REPOSITORY}/file-upload-service:latest"
+- "${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_REPOSITORY}/orders-kafka-service:latest"
