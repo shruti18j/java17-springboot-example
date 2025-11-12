@@ -1,0 +1,60 @@
+name: Multi-Service Deploy to Google Cloud Run
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'org-app/**'
+      - 'file-upload-service/**'
+      - 'orders-kafka-service/**'
+      - '.github/workflows/deploy.yml'
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          export_default_credentials: true
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Detect changed paths
+        id: diff
+        run: |
+          echo "ORG_CHANGED=false" >> $GITHUB_ENV
+          echo "UPLOAD_CHANGED=false" >> $GITHUB_ENV
+          echo "ORDERS_CHANGED=false" >> $GITHUB_ENV
+          git fetch --depth=2 origin main || true
+          git diff --name-only HEAD~1 | tee diff.txt
+          if grep -q '^org-app/' diff.txt; then echo "ORG_CHANGED=true" >> $GITHUB_ENV; fi
+          if grep -q '^file-upload-service/' diff.txt; then echo "UPLOAD_CHANGED=true" >> $GITHUB_ENV; fi
+          if grep -q '^orders-kafka-service/' diff.txt; then echo "ORDERS_CHANGED=true" >> $GITHUB_ENV; fi
+
+      - name: Deploy OrgApp
+        if: env.ORG_CHANGED == 'true'
+        run: |
+          IMAGE=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/orgapp-repo/orgapp:latest
+          docker build -t $IMAGE ./org-app
+          docker push $IMAGE
+          gcloud run deploy orgapp-service --image $IMAGE --region ${{ secrets.GCP_REGION }} --platform managed --allow-unauthenticated --port 8080 --memory 512Mi
+
+      - name: Deploy File Upload Service
+        if: env.UPLOAD_CHANGED == 'true'
+        run: |
+          IMAGE=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/orgapp-repo/fileupload:latest
+          docker build -t $IMAGE ./file-upload-service
+          docker push $IMAGE
+          gcloud run deploy fileupload-service --image $IMAGE --region ${{ secrets.GCP_REGION }} --platform managed --allow-unauthenticated --port 8080 --memory 512Mi
+
+      - name: Deploy Orders Service (Pub/Sub profile)
+        if: env.ORDERS_CHANGED == 'true'
+        run: |
+          IMAGE=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/orgapp-repo/orders:latest
+          docker build -t $IMAGE ./orders-kafka-service
+          docker push $IMAGE
+          gcloud run deploy orders-service             --image $IMAGE             --region ${{ secrets.GCP_REGION }}             --platform managed             --allow-unauthenticated             --port 8080             --memory 512Mi             --set-env-vars SPRING_PROFILES_ACTIVE=pubsub,GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},PUBSUB_TOPIC=orders-topic
