@@ -1,4 +1,3 @@
-# Minimal helper to guide GCP setup
 Write-Host "Setting GCP project to java17-spring-boot-demo-47761"
 gcloud config set project java17-spring-boot-demo-47761
 gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com pubsub.googleapis.com

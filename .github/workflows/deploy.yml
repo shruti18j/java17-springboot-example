@@ -2,10 +2,6 @@ name: Deploy to Cloud Run (Artifact Registry)
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'org-app/**'
-      - 'file-upload-service/**'
-      - 'orders-kafka-service/**'
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -20,7 +16,6 @@ jobs:
       - name: Configure Docker for Artifact Registry
         run: |
           gcloud auth configure-docker asia-south1-docker.pkg.dev --quiet
-          gcloud artifacts repositories create java17-repo --repository-format=docker --location=asia-south1 --description="Java17 images" || true
       - name: Build & push images
         run: |
           for svc in org-app file-upload-service orders-kafka-service; do

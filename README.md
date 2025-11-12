@@ -1,10 +1,13 @@
-# Java17-Springboot-example — Multi-phase CI/CD Showcase (Full)
-This repo contains three microservices (OrgApp, File Upload, Orders) with full working code (Java 17, Spring Boot 3.x),
-GitHub Actions (build, deploy, cleanup, pages), and helper PowerShell scripts to automate staged uploads and PRs.
+# Java17-Springboot-example — Multi-phase CI/CD Showcase (v5)
+This repo demonstrates Java 17 + Spring Boot microservices with staged uploads (feature branches & PRs),
+GitHub Actions CI, and deploy to Google Cloud Run (Artifact Registry).
 
 GCP Project ID: `java17-spring-boot-demo-47761`
 Region: `asia-south1`
 
-Run `scripts/init_upload.ps1` from the repo root after adding GitHub secrets:
-- GCP_SERVICE_ACCOUNT_KEY (service account JSON)
-- GH_TOKEN (personal access token, for PR automation)
+Run:
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+$env:GH_TOKEN = "ghp_your_token_here"
+.\scripts\init_upload.ps1
+```
