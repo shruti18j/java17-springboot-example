@@ -1,0 +1,36 @@
+name: Deploy to Cloud Run (Artifact Registry)
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'org-app/**'
+      - 'file-upload-service/**'
+      - 'orders-kafka-service/**'
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: "java17-spring-boot-demo-47761"
+          service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          export_default_credentials: true
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker asia-south1-docker.pkg.dev --quiet
+          gcloud artifacts repositories create java17-repo --repository-format=docker --location=asia-south1 --description="Java17 images" || true
+      - name: Build & push images
+        run: |
+          for svc in org-app file-upload-service orders-kafka-service; do
+            IMAGE=asia-south1-docker.pkg.dev/java17-spring-boot-demo-47761/java17-repo/$svc:latest
+            docker build -t $IMAGE ./$svc
+            docker push $IMAGE
+          done
+      - name: Deploy to Cloud Run
+        run: |
+          for svc in org-app file-upload-service orders-kafka-service; do
+            IMAGE=asia-south1-docker.pkg.dev/java17-spring-boot-demo-47761/java17-repo/$svc:latest
+            gcloud run deploy $svc --image $IMAGE --region asia-south1 --platform managed --allow-unauthenticated --port 8080 --memory 512Mi
+          done

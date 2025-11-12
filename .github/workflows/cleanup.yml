@@ -1,0 +1,51 @@
+name: Weekly Branch & PR Cleanup + Tag Prune (no email)
+on:
+  schedule:
+    - cron: "30 20 * * 6"
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup git
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions Bot"
+          git fetch --all --prune
+      - name: Delete remote branches except main
+        run: |
+          for branch in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin | sed 's#origin/##' | grep -v '^main$' | grep -v '^HEAD$' | sort -u); do
+            git push origin --delete $branch || true
+          done
+      - name: Delete tags older than 30 days
+        run: |
+          DAYS=30
+          now=$(date +%s)
+          for t in $(git for-each-ref --format='%(refname:short) %(creatordate:unix)' refs/tags | awk '{print $1" "$2}'); do
+            tag=$(echo $t | awk '{print $1}')
+            ts=$(echo $t | awk '{print $2}')
+            if [ -z "$ts" ]; then continue; fi
+            age=$(( (now - ts) / 86400 ))
+            if [ "$age" -gt "$DAYS" ]; then
+              git push --delete origin refs/tags/$tag || true
+            fi
+          done
+      - name: Close stale PRs linked to deleted branches
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          prs=$(curl -s -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/$REPO/pulls?state=open")
+          echo "$prs" | jq -c '.[]' | while read -r pr; do
+            head=$(echo "$pr" | jq -r '.head.ref')
+            number=$(echo "$pr" | jq -r '.number')
+            if [ "$head" != "main" ]; then
+              curl -s -X PATCH -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/$REPO/pulls/$number" -d '{"state":"closed"}' > /dev/null || true
+            fi
+          done
