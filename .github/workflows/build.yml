@@ -18,4 +18,4 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
       - name: Build ${{ matrix.service }}
-        run: mvn -B -f ${{ matrix.service }}/pom.xml clean package
+        run: mvn -q -B -DskipTests clean package --file ${{ matrix.service }}/pom.xml
