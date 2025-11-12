@@ -1,0 +1,6 @@
+- [ ] Actions enabled
+- [ ] Secrets set: GCP_PROJECT_ID, GCP_REGION, GCP_SERVICE_ACCOUNT_KEY
+- [ ] Build runs on feature/* and PRs, Deploy runs on main
+- [ ] Cloud Run deployed: orgapp-service, fileupload-service, orders-service
+- [ ] GitHub Pages published from /docs
+- [ ] Postman collection imported

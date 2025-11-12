@@ -1,0 +1,75 @@
+{
+  "info": {
+    "name": "Java17 Services",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "OrgApp Health",
+      "request": {
+        "method": "GET",
+        "url": "{{ORGAPP_URL}}/health"
+      }
+    },
+    {
+      "name": "Upload File",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "multipart/form-data"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file"
+            }
+          ]
+        },
+        "url": "{{FILEUPLOAD_URL}}/upload"
+      }
+    },
+    {
+      "name": "List Files",
+      "request": {
+        "method": "GET",
+        "url": "{{FILEUPLOAD_URL}}/files"
+      }
+    },
+    {
+      "name": "Download File",
+      "request": {
+        "method": "GET",
+        "url": "{{FILEUPLOAD_URL}}/download/{{FILENAME}}"
+      }
+    },
+    {
+      "name": "Publish Order",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"item\": \"book\",\n  \"qty\": 2\n}"
+        },
+        "url": "{{ORDERS_URL}}/orders"
+      }
+    },
+    {
+      "name": "Read Events",
+      "request": {
+        "method": "GET",
+        "url": "{{ORDERS_URL}}/events"
+      }
+    }
+  ]
+}
