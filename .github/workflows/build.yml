@@ -1,29 +1,25 @@
 ﻿name: Build and Test
-
 on:
   push:
     branches: [ main, 'feature/**' ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [ "org-app", "file-upload-service", "orders-kafka-service" ]
+        service: [org-app, file-upload-service, orders-kafka-service]
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
-          java-version: "17"
-          distribution: "temurin"
-          cache: "maven"
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
 
-      - name: Build each module
-        run: mvn -B -f $\{\{ matrix.service \}\}/pom.xml clean package -DskipTests
+      - name: Build ${{ matrix.service }}
+        run: mvn -B -f ${{ matrix.service }}/pom.xml clean package -DskipTests
