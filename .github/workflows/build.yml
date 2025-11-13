@@ -1,16 +1,19 @@
 ﻿name: Build and Test
+
 on:
   push:
     branches: [ main, 'feature/**' ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     strategy:
       matrix:
-        service: [org-app, file-upload-service, orders-kafka-service]
+        service: [ org-app, file-upload-service, orders-kafka-service ]
 
     steps:
       - uses: actions/checkout@v4
