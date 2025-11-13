@@ -1,9 +1,15 @@
 ﻿name: Build and Test
+
 on:
+  workflow_dispatch:
   push:
-    branches: [ main, 'feature/**' ]
+    branches:
+      - main
+      - 'feature/**'
+      - v5-full-upload
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
